@@ -1,0 +1,28 @@
+; Nom du pool
+[firstweb]
+; On utilisera une socket
+listen = WEB/.socks/firstweb.sock
+
+; Permission pour la socket
+listen.owner = USERNAME
+listen.group = www-data
+listen.mode = 0666
+
+; Utilsateur/Groupe des processus
+user = USERNAME
+group = www-data
+
+; On choisira une gestion dynamique des processus
+pm = dynamic
+
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 2
+pm.max_spare_servers = 5
+
+slowlog = /var/log/php5-fpm.firstweb.log.slow
+slowlog = WEB/USERNAME/DNS/log/php-slow.php
+
+php_admin_value[open_basedir]=WEB/USERNAME/DNS/public_html
+php_admin_value[session.save_path]=WEB/USERNAME/DNS/tmp
+php_admin_value[upload_tmp_dir]=WEB/USERNAME/DNS/tmp

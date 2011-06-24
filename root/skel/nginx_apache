@@ -1,0 +1,37 @@
+server {
+	listen       80;
+        server_name  DNS;
+        root         WEB/USERNAME/DNS/public_html/;
+
+        # Static
+	location / {
+    		proxy_pass http://127.0.0.1:8080/;
+    		access_log off;
+  	}
+
+        # PHP scripts -> PHP-FPM server listening on 127.0.0.1:9000
+        location ~ \.php$ {
+                 fastcgi_pass   127.0.0.1:9000;
+                 fastcgi_index  index.php;
+                 include fastcgi_params;
+                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+
+        # Security
+        location ~ /\.ht {
+            deny  all;
+        }
+
+	# Stuffs
+	location = /favicon.ico {
+		access_log	 off;
+		return	 204;
+	}
+
+	location ~* ^.+\.(jpg|jpeg|gif|css|png|js|xml)$ {
+		expires 	30d;
+		#access_log	off;
+		#set		$memcached_key $uri;
+		#memcached_pass 	127.0.0.1:11211;
+	}
+  }

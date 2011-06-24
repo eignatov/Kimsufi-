@@ -1,0 +1,24 @@
+<VirtualHost *:8080>
+        ServerName DNS
+        ServerAdmin     hostmaster@DNS
+
+	DocumentRoot SKEL/USERNAME/DNS/public_html
+        Options None
+
+        # Fast CGI + FPM
+        FastCgiExternalServer /home/www/firstweb/cgi-bin/php5.external -socket /home/www/.socks/firstweb.sock
+        
+	Alias /cgi-bin/ SKEL/USERNAME/DNS/cgi-bin/
+
+        <Directory /home/www/firstweb/public_html>
+                Options SymLinksIfOwnerMatch
+                AllowOverride All
+                Order allow,deny
+                Allow from all
+        </Directory>
+
+        # Log
+        ErrorLog SKEL/USERNAME/DNS/logs/error.log
+        LogLevel warn
+        CustomLog SKEL/USERNAME/DNS/logs/access.log combined
+</VirtualHost>
