@@ -73,7 +73,6 @@ ajout_user() (
 ajout_rep() (
 	mkdir -p -v $3/$1/$2/public_html
 	mkdir -p -v $3/$1/$2/logs
-	mkdir -p -v $3/$1/$2/cgi-bin
 	mkdir -p -v $3/$1/$2/tmp
 		
 	chown	--verbose	\
