@@ -17,10 +17,20 @@ log() (
 
 log "I" "Démarrage de l'installation"
 
-if [[ -n `grep "step_kernel" /var/log/setup_step` ]];
+if [[ -n `grep "step_kernel_1" /var/log/setup_step` ]];
 then
-	log "I" "L'installation du nouveau noyau a déjà été réalisé"
+	log "I" "L'installation du nouveau noyau a déjà été réalisé : $(uname -a)"
+
+	log "I" "Installation des packages de base"
+	aptitude -y install ntpdate ssh lsof libstring-mkpasswd-perl ccze
 	
+	
+	aptitude -y install ntpdate ssh lsof libstring-mkpasswd-perl ccze
+	
+elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
+then
+	log "E" "L'installation du kernel n'a pas été finalisé !"
+	exit 2
 else
 	log "I" "Début de l'installation et compilation du noyau"
 	echo "step_kernel_0" > /var/log/setup_step
@@ -33,7 +43,6 @@ else
 	
 	log "I" "Installation des outils pour la compilation du noyau"
 	aptitude -y install kernel-package libncurses5-dev fakeroot bzip2 build-essential lzma patch make vim-nox
-
 
 	log "I" "Téléchargement du noyau"
 	cd /usr/src
@@ -50,28 +59,26 @@ else
 	cp /usr/src/.config-2.6.39-perso /usr/src/linux-2.6.39.1.config
 
 	cd linux-2.6.39.1
-	# On choisit les options de compilation 
-	# un peut d'aide sur http://www.grsecurity.net/confighelp.php
-
+	
+	log "I" "Vérification des options de compilation"
 	make menuconfig
 	
-	# Activer "[*] Enable loadable module support"
- 
+	log "I" "Compilation du noyau. Prenez un café."
 	make -j4 all
  
+	log "I" "Installation des modules"
 	make modules_install
  
+	log "I" "Création des paquets du noyau"
 	fakeroot make-kpkg --initrd --append-to-version=-custom kernel_image kernel_headers
  
-
-	# Installation du noyau et des headers 
-	
+	log "I" "Installation du noyau"
 	cd /usr/src
-	ls -ail
-
 	dpkg -i linux-headers-*.
 	dpkg -i linux-image-*
  
+	log "I" "Redémarrage !! Relancer lescript ensuite"
+	echo "step_kernel_1" > /var/log/setup_step
 	shutdown -r now
 
 fi
@@ -83,7 +90,6 @@ fi
 
 
 #
-aptitude -y install ntpdate ccze ssh lsof libstring-mkpasswd-perl ccze
 
 
 
