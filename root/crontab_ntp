@@ -1,0 +1,7 @@
+# MAJ ntp tous les jours à 23h50
+50 23 * * * /usr/sbin/ntpdate fr.pool.ntp.org
+
+# Backup 
+
+# Vérification de la présence d'un rootkit toutes les nuits  ?? rkhunter + chkrootkit 
+
