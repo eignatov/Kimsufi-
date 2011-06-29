@@ -1,0 +1,2 @@
+# Vérification de la présence d'un rootkit toutes les nuits  ?? rkhunter + chkrootkit
+30 23 * * * /root/scripts/rootkit_check.sh

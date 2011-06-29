@@ -22,10 +22,19 @@ then
 	log "I" "L'installation du nouveau noyau a déjà été réalisé : $(uname -a)"
 
 	log "I" "Installation des packages de base"
-	aptitude -y install ntpdate ssh lsof libstring-mkpasswd-perl ccze
+	aptitude -y install ntpdate  lsof libstring-mkpasswd-perl ccze
 	
+	log "I" "Installation du client ntp"
+	aptitude -y install ntpdate
 	
-	aptitude -y install ntpdate ssh lsof libstring-mkpasswd-perl ccze
+	log "I" "Crontab pour la MAJ de l'heure"
+	/usr/bin/crontab -u root /root/crontab_ntp
+	if [[ -n `crontab -l | grep ntpdate` ]];
+	then
+		rm -f /root/crontab_ntp
+	else
+		log "E" "Echec de l'ajout du crontab ntp"
+	fi
 	
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
@@ -77,10 +86,10 @@ else
 	dpkg -i linux-headers-*.
 	dpkg -i linux-image-*
  
-	log "I" "Redémarrage !! Relancer lescript ensuite"
+	log "I" "Redémarrage !! Relancer le script ensuite"
 	echo "step_kernel_1" > /var/log/setup_step
-	shutdown -r now
 
+	shutdown -r now
 fi
 
 
