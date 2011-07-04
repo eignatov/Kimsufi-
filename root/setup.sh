@@ -51,6 +51,15 @@ then
 		log "E" "Echec de l'ajout du crontab rootkit"
 	fi
 	
+	log "I" "Crontab pour le backup SQL"
+	/usr/bin/crontab -u root /root/crontab/backup_mysql
+	if [[ -n `crontab -l | grep sql` ]];
+	then
+		rm -f /root/crontab/backup_mysql
+	else
+		log "E" "Echec de l'ajout du crontab backup mysql"
+	fi
+	
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
 	log "E" "L'installation du kernel n'a pas été finalisé !"

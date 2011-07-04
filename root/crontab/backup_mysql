@@ -1,0 +1,2 @@
+# Backup SQL tous les jours à 1h00
+00 01 * * * /root/scripts/backup_mysql.sh > /var/backup/sql.log 2>&1
