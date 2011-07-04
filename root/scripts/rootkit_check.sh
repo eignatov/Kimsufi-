@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 RKHUNTER=/usr/bin/rkhunter
 REPORT_EMAIL="yohan@lepage.eu.org"
 

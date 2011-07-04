@@ -26,14 +26,29 @@ then
 	
 	log "I" "Installation du client ntp"
 	aptitude -y install ntpdate
+
+	log "I" "MAJ de l'heure"
+	ntpdate-debian
 	
 	log "I" "Crontab pour la MAJ de l'heure"
-	/usr/bin/crontab -u root /root/crontab_ntp
+	/usr/bin/crontab -u root /root/crontab/ntp
 	if [[ -n `crontab -l | grep ntpdate` ]];
 	then
 		rm -f /root/crontab_ntp
 	else
 		log "E" "Echec de l'ajout du crontab ntp"
+	fi
+
+	log "I" "Installation de rkhunter pour la recherche de rootkit"
+	aptitude -y install rkhunter
+
+	log "I" "Crontab pour la recherche automatique de rootkit"
+	/usr/bin/crontab -u root /root/crontab/rootkit
+	if [[ -n `crontab -l | grep rootkit` ]];
+	then
+		rm -f /root/crontab/rootkit
+	else
+		log "E" "Echec de l'ajout du crontab rootkit"
 	fi
 	
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];

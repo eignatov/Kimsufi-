@@ -1,0 +1,2 @@
+# MAJ ntp tous les jours à 23h50
+50 23 * * * /usr/sbin/ntpdate fr.pool.ntp.org
