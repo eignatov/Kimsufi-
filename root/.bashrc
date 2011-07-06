@@ -50,7 +50,7 @@ WHITE=`tput setf 7`
 
 if [ "$LOGNAME" = "root" ]
 then
-	PS1="\[$RED\]\t \u@\H:\[$CYAN\]\w \[$MAGENTA\][\!]\$ \[$BLACK\] \n"
+	PS1="\[$RED\]\t \u@\H:\[$CYAN\]\w \[$MAGENTA\][\!]\$ \[$BLACK\] \n\[$WHITE\]"
 else
 	PS1="\[$GREEN\]\t \u@\H:\[$CYAN\]\w \[$MAGENTA\][\!]\$ \[$BLACK\] \n" 
 fi
