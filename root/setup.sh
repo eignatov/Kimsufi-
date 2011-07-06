@@ -61,6 +61,8 @@ then
 	fi
 
 	# garder ce paragraphe pour la fin de l'installation
+	log "I" "Installation du firewall"
+	aptitude -y install iptables
 	log "I" "Tester le firewall /etc/init.d/firewall"
 	
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
