@@ -16,8 +16,8 @@
 # shell suivant, si vous ne tapez rien pendant 20 secondes, les
 # règles de pare-feu seront effacées.
 #---------------------------------------------------------------
-#  while true; do test=""; read  -t 20 -p "OK? " test ; \
-#  [ -z "$test" ] && /etc/init.d/myfirewall clear ; done
+#  while true; do test=""; read  -t 60 -p "OK pour 1 min ?" test ; \
+#  [ -z "$test" ] && /etc/init.d/firewall clear ; done
 #---------------------------------------------------------------
  
 PATH=/bin:/sbin:/usr/bin:/usr/sbin

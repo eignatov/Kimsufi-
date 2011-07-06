@@ -51,14 +51,17 @@ then
 		log "E" "Echec de l'ajout du crontab rootkit"
 	fi
 	
-	log "I" "Crontab pour le backup SQL"
-	/usr/bin/crontab -u root /root/crontab/backup_mysql
+	log "I" "Crontab pour le backup"
+	/usr/bin/crontab -u root /root/crontab/backup
 	if [[ -n `crontab -l | grep sql` ]];
 	then
-		rm -f /root/crontab/backup_mysql
+		rm -f /root/crontab/backup
 	else
-		log "E" "Echec de l'ajout du crontab backup mysql"
+		log "E" "Echec de l'ajout du crontab backup"
 	fi
+
+	# garder ce paragraphe pour la fin de l'installation
+	log "I" "Tester le firewall /etc/init.d/firewall"
 	
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
