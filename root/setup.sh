@@ -60,11 +60,19 @@ then
 		log "E" "Echec de l'ajout du crontab backup"
 	fi
 
+	
+	log "I" "Installation de Bind"
+	aptitude -y install bind9 bind9utils dnsutils
+	
 	# garder ce paragraphe pour la fin de l'installation
 	log "I" "Installation du firewall"
 	aptitude -y install iptables
+	chmod 500 /etc/init.d/firewall
 	log "I" "Tester le firewall /etc/init.d/firewall"
-	
+
+	log "I" "Installation de logwatch"
+	aptitude -y install logwatch	
+
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
 	log "E" "L'installation du kernel n'a pas été finalisé !"
