@@ -35,7 +35,7 @@ UDP_SERVICES="53 67 68 138"
 # Services que le système utilisera du réseau
 # DNS 53
 # WEB 80 443
-REMOTE_TCP_SERVICES="53 80 443"
+REMOTE_TCP_SERVICES="22 53 80 443"
 
 # DNS 31
 # DHCP 67 68
