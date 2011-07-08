@@ -1,0 +1,29 @@
+$ORIGIN example.info.
+$TTL 60
+example.info.	IN      SOA     ns1.example.info. yohann.example.info. (
+                20110670900	; Numéro desérie
+               	6H		; raffraichissement
+                1H		; essai
+               	2W		; expiration
+                1H )		; minimum
+
+			TXT 	"v=spf1 a mx ptr a:IPOVH ?all"
+	                NS      ns1.example.info.
+	                NS      sdns1.ovh.net.
+
+	       	IN      MX      1	ASPMX.L.GOOGLE.COM. 
+	       	IN      MX      5	ALT1.ASPMX.L.GOOGLE.COM. 
+	       	IN      MX      5	ALT2.ASPMX.L.GOOGLE.COM. 
+	       	IN      MX      10	ASPMX2.GOOGLEMAIL.COM. 
+	       	IN      MX      10	ASPMX3.GOOGLEMAIL.COM.
+		IN	A	91.121.200.22
+		IN	AAAA	2001:41d0:1:d116::10
+
+ns1		IN	A	91.121.200.22
+ns1		IN	AAAA	2001:41d0:1:d116::10
+
+; OVH public
+;ovh		IN	A	91.121.200.22
+;ovh		IN	AAAA	2001:41d0:1:d116::dead	
+www		IN	CNAME	ovh
+
