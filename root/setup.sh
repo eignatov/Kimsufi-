@@ -77,7 +77,10 @@ then
 	
 	log "I" "Installation de syslog-ng"
 	aptitude -y install syslog-ng
-
+	mkdir /var/lib/syslog-ng
+	mkdir /var/log/fw
+	touch /var/log/fw/in.log
+	touch /var/log/fw/out.log
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
 	log "E" "L'installation du kernel n'a pas été finalisé !"
