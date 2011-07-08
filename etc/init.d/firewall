@@ -1,4 +1,14 @@
 #!/bin/sh
+### BEGIN INIT INFO
+# Provides:          firewall
+# Required-Start:    mountkernfs ifupdown $local_fs
+# X-Start-Before:    networking
+# Default-Start:     2 3 4 5
+# Required-Stop:
+# Default-Stop: 0 1 6
+# Short-Description: Configure the ip(6)tables firewall.
+# Description:       Configure the ip(6)tables firewall.
+### END INIT INFO
 # Exemple de configuration de pare-feu
 #
 # Défauts :

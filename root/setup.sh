@@ -68,10 +68,15 @@ then
 	log "I" "Installation du firewall"
 	aptitude -y install iptables
 	chmod 500 /etc/init.d/firewall
+	/usr/sbin/update-rc.d firewall remove
+	/usr/sbin/update-rc.d firewall defaults
 	log "I" "Tester le firewall /etc/init.d/firewall"
 
 	log "I" "Installation de logwatch"
 	aptitude -y install logwatch	
+	
+	log "I" "Installation de syslog-ng"
+	aptitude -y install syslog-ng
 
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
