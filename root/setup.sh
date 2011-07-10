@@ -105,7 +105,7 @@ else
 	aptitude update && aptitude -y full-upgrade
 	
 	log "I" "Installation des outils pour la compilation du noyau"
-	aptitude -y install kernel-package libncurses5-dev fakeroot bzip2 build-essential lzma patch make vim-nox
+	aptitude -y install kernel-package libncurses5-dev fakeroot bzip2 build-essential lzma patch make vim-nox vim-scripts
 
 	log "I" "Téléchargement du noyau"
 	cd /usr/src

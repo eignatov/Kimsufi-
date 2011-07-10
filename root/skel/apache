@@ -2,11 +2,11 @@
         ServerName DNS
         ServerAdmin     hostmaster@DNS
 
-	DocumentRoot SKEL/USERNAME/DNS/public_html
+	DocumentRoot WEB/USERNAME/DNS/public_html
         Options None
 
         # Fast CGI + FPM
-        FastCgiExternalServer /home/www/firstweb/cgi-bin/php5.external -socket /home/www/.socks/firstweb.sock
+        FastCgiExternalServer WEB/USERNAME/DNS/cgi-bin/php5.external -socket WEB/USERNAME/DNS/.socks/firstweb.sock
         
 	Alias /cgi-bin/ SKEL/USERNAME/DNS/cgi-bin/
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -x
-# Nom d'utilisateur
+# Nom d'utilisateur "yo_user1, christ_user2, quentin_www1, quentin_www1, etc"
 USERNAME=$1
 MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=3`
 
@@ -23,6 +23,21 @@ SKEL=/root/skel
 # Répertoire web
 WEB=/var/www
 
+
+
+#####################################
+# function aide()
+#####################################
+# Affiche l'aide
+aide() (
+	echo "./make_site.sh <utilisateur> <dns> <type> <mysql> <commentaire>"
+	echo "Exemples :" 
+	echo "Un site sous nginx avec mysql"
+	echo -e "\t./make_site.sh yo_www lepage.info nginx true \"Site web principale\""
+	echo "Un site sous apache avec mysql et nginx en frontal"
+	echo -e  "\t./make_site.sh quentin_www lovepussy.com apache true \"I love pussy\""
+)
+
 #####################################
 # function log()
 #####################################
@@ -33,7 +48,22 @@ log() (
 	echo $1": $(date +%D' '%R':'%S) "$2 >> /var/log/make_site.log
 	echo $1": $(date +%D' '%R':'%S) "$2 > /dev/stdout
 )
-
+#####################################
+# function make_pass
+#####################################
+# vérifie le mot de passe 
+make_pass() (
+	while true
+	do
+		TMP=`echo ${MOTDEPASSE} | grep '"'`
+		if [ -n "${TMP}"  ]
+		then
+			MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=3`
+		else 
+			break
+		fi
+	done
+)
 #####################################
 # function ajout_user()
 #####################################
@@ -74,6 +104,9 @@ ajout_rep() (
 	mkdir -p -v $3/$1/$2/public_html
 	mkdir -p -v $3/$1/$2/logs
 	mkdir -p -v $3/$1/$2/tmp
+	mkdir -p -v $3/$1/$2/cgi-bin
+
+# FIX Ajout les fichiers de logs
 		
 	chown	--verbose	\
 		--preserve-root	\
@@ -93,24 +126,32 @@ ajout_rep() (
 # @param5 Conf nginx/apache
 
 copie_skel() (
-	if [[ "$" = "nginx" ]];then
+	if [[ "$5" = "nginx" ]];then
 		# NGINX
-		sed -e "s%DNS%$DNS%; s%WEB%$WEB%; s%USERNAME%$USERNAME%" $1/nginx > /etc/nginx/sites-enabled/$4_$5
+		sed -e "s%DNS%$DNS%;" -e "s%WEB%$WEB%;"-e "s%USERNAME%$USERNAME%g" $1/nginx > /etc/nginx/sites-enabled/$4_$5
 	else 
 		# NGINX -> APACHE
-		sed -e "s/DNS/$DNS/; s/WEB/$WEB/; s/USERNAME/$USERNAME/" $1/nginx_apache > /etc/nginx/sites-enabled/apache_$4_$5
-		sed -e "s/DNS/$DNS/; s/WEB/$WEB/; s/USERNAME/$USERNAME/" $1/apache > /etc/apache2/sites-available/$4_$5
+		sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/g" $1/nginx_apache > /etc/nginx/sites-enabled/apache_$4_$5
+		sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/g" $1/apache > /etc/apache2/sites-available/$4_$5
 		/usr/sbin/a2ensite $4_$5
 	fi
 	
 	# Pools PHP
-	sed -e "s/DNS/$DNS/; s/WEB/$WEB/; s/USERNAME/$USERNAME/" $1/php > /etc/php5/fpm/pool.d/$4_$5
+	sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/" $1/php > /etc/php5/fpm/pool.d/$4_$5
 )
 
+
+if [ $# -ne 5 ]
+then 
+	aide
+	exit 0
+fi
+make_pass
 ajout_user ${USERNAME} ${MOTDEPASSE} ${COMMENT} || exit 2
 ajout_rep ${USERNAME} ${DNS} ${WEB}
-copie_skel ${SKEL} ${WEB} ${TYPE} ${USERNAME} ${DNS} 
+copie_skel ${SKEL} ${WEB} ${USERNAME} ${DNS} ${TYPE}
 
+/etc/init.d/apache2 reload
 echo "Mot de passe : ${MOTDEPASSE}"
 
 #touch /etc/php5/fpm/pool.d/$1.conf

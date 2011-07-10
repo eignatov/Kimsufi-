@@ -81,7 +81,7 @@ set laststatus=2
 set ruler
 
 " Désactiver le wrapping
-set nowrap
+set wrap
 
 " Options folding
 set foldmethod=marker
