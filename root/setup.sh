@@ -63,7 +63,10 @@ then
 	
 	log "I" "Installation de Bind"
 	aptitude -y install bind9 bind9utils dnsutils
-	
+	mkdir /var/log/bind
+	touch /var/log/bind/bind.log	
+	touch /var/log/bind/querys.log
+	chown -R bind:bind /var/log/bind	
 	# garder ce paragraphe pour la fin de l'installation
 	log "I" "Installation du firewall"
 	aptitude -y install iptables
@@ -81,6 +84,12 @@ then
 	mkdir /var/log/fw
 	touch /var/log/fw/in.log
 	touch /var/log/fw/out.log
+
+
+	log "I" "Installation de fail2ban"
+	aptitude -y install fail2ban
+	
+
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
 	log "E" "L'installation du kernel n'a pas été finalisé !"
