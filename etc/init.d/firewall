@@ -58,172 +58,167 @@ fi
  
 fw_start () {
 
-  # Nettoyage
-  /sbin/iptables --flush
+# Nettoyage
+	/sbin/iptables --flush
  
- # Create a LOGDROP chain to log and drop packets
- /sbin/iptables -N LOGDROP > /dev/null 2> /dev/null
- /sbin/iptables -F LOGDROP
- /sbin/iptables -A LOGDROP -m limit -j LOG --log-prefix "[DROP-IN] "
- /sbin/iptables -A LOGDROP -j DROP
+# Création de la chaine LOGDROP : Suppression+LOG
+	/sbin/iptables -N LOGDROP > /dev/null 2> /dev/null
+	/sbin/iptables -F LOGDROP
+	/sbin/iptables -A LOGDROP -m limit -j LOG --log-prefix "[DROP-IN] "
+	/sbin/iptables -A LOGDROP -j DROP
 
- # Create a DROPFLOOD chain to log and drop packets
- /sbin/iptables -N DROPFLOOD > /dev/null 2> /dev/null
- /sbin/iptables -F DROPFLOOD
- /sbin/iptables -A DROPFLOOD -m limit -j LOG --log-prefix "[DROP-FLOOD] "
- /sbin/iptables -A DROPFLOOD -j DROP
-###################################   SORTIE    ################################
+# Création de la chaine LOGDROP : Suppression+LOG
+	/sbin/iptables -N DROPFLOOD > /dev/null 2> /dev/null
+	/sbin/iptables -F DROPFLOOD
+	/sbin/iptables -A DROPFLOOD -m limit -j LOG --log-prefix "[DROP-FLOOD] "
+	/sbin/iptables -A DROPFLOOD -j DROP
 
-  /sbin/iptables -A INPUT -i lo -j ACCEPT
+#############################   TRAFFIC ENTRAN    ################################
+
+# Traffic local	
+	sbin/iptables -A INPUT -i lo -j ACCEPT
   
-  # Trafic d'entrée :
-  /sbin/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+# Session déjà établie
+	/sbin/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
   
-  # Services
-  if [ -n "$TCP_SERVICES" ] ; then
-  for PORT in $TCP_SERVICES; do
-    /sbin/iptables -A INPUT -p tcp --dport ${PORT} -j ACCEPT
-  done
-  fi
-  if [ -n "$UDP_SERVICES" ] ; then
-  for PORT in $UDP_SERVICES; do
-    /sbin/iptables -A INPUT -p udp --dport ${PORT} -j ACCEPT
-  done
-  fi
+# Services TCP
+	if [ -n "$TCP_SERVICES" ] ; then
+		for PORT in $TCP_SERVICES; do
+			/sbin/iptables -A INPUT -p tcp --dport ${PORT} -j ACCEPT
+		done
+	fi
+# Services UDP
+	if [ -n "$UDP_SERVICES" ] ; then
+		for PORT in $UDP_SERVICES; do
+			/sbin/iptables -A INPUT -p udp --dport ${PORT} -j ACCEPT
+		done
+	fi
+ 
+# A Virer en prod (test vmware)
+	/sbin/iptables -A INPUT -s 172.16.52.1 -p udp --dport 17500 -j ACCEPT
   
-  # Test à distance	
-  #  /sbin/iptables -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT
-  # /sbin/iptables -A INPUT -p icmp --icmp-type echo-reply -m limit --limit 1/s -j ACCEPT
+
+############ Protection contre le flood
   
-  # Vmware...
-  /sbin/iptables -A INPUT -s 172.16.52.1 -p udp --dport 17500 -j ACCEPT
-  
-  # Protection Flood
+# Chaine ICMP flood
+	/sbin/iptables -N icmp-flood
+# On entre dans la chaine pour l'icmp
+	/sbin/iptables -A INPUT  -p icmp -j icmp-flood
+# Get out of chain if packet rate for the same IP is below 4 per second with a burst of 8 per second
+	/sbin/iptables -A icmp-flood -m limit --limit 4/s --limit-burst 8  -m comment --comment "[DROP-IN-ICMP-FLOOD][Limit ICMP rate] " -j RETURN
+# Log as flood when rate is higher
+	/sbin/iptables -A icmp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-ICMP-FLOOD] "
+# Blacklist IP for 3 minutes
+	/sbin/iptables -A icmp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-ICMP-FLOOD][Blacklist source IP] " -j DROPFLOOD
 
 
+# Chaine  UDP flood
+ 	/sbin/iptables -N udp-flood
+ 	/sbin/iptables -F udp-flood
+# Jump to chain if UDP
+ 	/sbin/iptables -A INPUT  -p  udp -j udp-flood
+# Limit UDP rate to 10/sec with burst at 20 (sometimes it is not enough, if you know a better average rate, let me know!)
+ 	/sbin/iptables -A udp-flood -m limit --limit 5/s --limit-burst 20 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit UDP rate] " -j RETURN
+# Log
+ 	/sbin/iptables -A udp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-UDP-FLOOD] "
+# 3 minutes ban for flooders
+ 	/sbin/iptables -A udp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP] " -j DROPFLOOD
 
 
-  # Create chain dedicated to ICMP flood
-  /sbin/iptables -N thyl-icmp-flood
-  # Jump to that chain when ICMP  detected
-  /sbin/iptables -A INPUT  -p icmp -j thyl-icmp-flood
-  # Get out of chain if packet rate for the same IP is below 4 per second with a burst of 8 per second
-  /sbin/iptables -A thyl-icmp-flood -m limit --limit 4/s --limit-burst 8  -m comment --comment "[DROP-IN-ICMP-FLOOD][Limit ICMP rate] " -j RETURN
-  # Log as flood when rate is higher
-  /sbin/iptables -A thyl-icmp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-ICMP-FLOOD] "
-  # Blacklist IP for 3 minutes
-  /sbin/iptables -A thyl-icmp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-ICMP-FLOOD][Blacklist source IP] " -j DROPFLOOD
+# Create syn-flood chain
+ 	/sbin/iptables -N syn-flood > /dev/null 2> /dev/null
+ 	/sbin/iptables -F syn-flood
+# Jump into syn-flood chain when a syn packet is detected
+ 	/sbin/iptables -A INPUT  -p tcp --syn -j syn-flood
+# Limit packet rate to 2 per second with a 6 per second burst
+ 	/sbin/iptables -A syn-flood -m limit --limit 2/s --limit-burst 6 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit TCP SYN rate] " -j RETURN
+# Log flooders
+ 	/sbin/iptables -A syn-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-SYN-FLOOD] "
+# Ban flooders for 3 minutes
+ 	/sbin/iptables -A syn-flood -m recent --name blacklist_180 --set  -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP]" -j DROPFLOOD
 
 
- # Create chain for UDP flood
- /sbin/iptables -N thyl-udp-flood
- /sbin/iptables -F thyl-udp-flood
- # Jump to chain if UDP
- /sbin/iptables -A INPUT  -p  udp -j thyl-udp-flood
- # Limit UDP rate to 10/sec with burst at 20 (sometimes it is not enough, if you know a better average rate, let me know!)
- /sbin/iptables -A thyl-udp-flood -m limit --limit 5/s --limit-burst 20 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit UDP rate] " -j RETURN
- # Log
- /sbin/iptables -A thyl-udp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-UDP-FLOOD] "
- # 3 minutes ban for flooders
- /sbin/iptables -A thyl-udp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP] " -j DROPFLOOD
-
-
- # Create syn-flood chain
- /sbin/iptables -N thyl-syn-flood > /dev/null 2> /dev/null
- /sbin/iptables -F thyl-syn-flood
- # Jump into syn-flood chain when a syn packet is detected
- /sbin/iptables -A INPUT  -p tcp --syn -j thyl-syn-flood
- # Limit packet rate to 2 per second with a 6 per second burst
- /sbin/iptables -A thyl-syn-flood -m limit --limit 2/s --limit-burst 6 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit TCP SYN rate] " -j RETURN
- # Log flooders
- /sbin/iptables -A thyl-syn-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-SYN-FLOOD] "
- # Ban flooders for 3 minutes
- /sbin/iptables -A thyl-syn-flood -m recent --name blacklist_180 --set  -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP]" -j DROPFLOOD
-
-
-
-  #/sbin/iptables -A INPUT -p udp -m limit --limit 10/s -j ACCEPT
-  # Log des autres paquets qui seront supprimés
-  /sbin/iptables -A INPUT -j LOGDROP
-  /sbin/iptables --policy INPUT DROP
+ # Log des autres paquets qui seront supprimés
+	/sbin/iptables -A INPUT -j LOGDROP
+ 	/sbin/iptables --policy INPUT DROP
 
 ###################################   SORTIE    ################################
 
-  /sbin/iptables -A OUTPUT -j ACCEPT -o lo 
-  /sbin/iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	/sbin/iptables -A OUTPUT -j ACCEPT -o lo 
+	/sbin/iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-  # ICMP est permis
-  /sbin/iptables -A OUTPUT -p icmp -j ACCEPT
+# ICMP est permis
+	/sbin/iptables -A OUTPUT -p icmp -j ACCEPT
 
-  # Ainsi que pour tous les services que nous avons définis
-  if [ -n "$REMOTE_TCP_SERVICES" ] ; then
-  for PORT in $REMOTE_TCP_SERVICES; do
-    /sbin/iptables -A OUTPUT -p tcp --dport ${PORT} -j ACCEPT
-  done
-  fi
-  if [ -n "$REMOTE_UDP_SERVICES" ] ; then
-  for PORT in $REMOTE_UDP_SERVICES; do
-    /sbin/iptables -A OUTPUT -p udp --dport ${PORT} -j ACCEPT
-  done
-  fi
+# Ainsi que pour tous les services que nous avons définis
+	if [ -n "$REMOTE_TCP_SERVICES" ] ; then
+		for PORT in $REMOTE_TCP_SERVICES; do
+			/sbin/iptables -A OUTPUT -p tcp --dport ${PORT} -j ACCEPT
+		done
+	fi
+
+	if [ -n "$REMOTE_UDP_SERVICES" ] ; then
+		for PORT in $REMOTE_UDP_SERVICES; do
+			/sbin/iptables -A OUTPUT -p udp --dport ${PORT} -j ACCEPT
+		done
+	fi
   
   
-  # Toutes les autres connexions sont enregistrées dans syslog
-  /sbin/iptables -A OUTPUT -j LOG --log-prefix '[DROP-OUT] '
-  /sbin/iptables -A OUTPUT -j REJECT 
-  /sbin/iptables --policy OUTPUT DROP
+# Toutes les autres connexions sont enregistrées dans syslog
+	/sbin/iptables -A OUTPUT -j LOG --log-prefix '[DROP-OUT] '
+	/sbin/iptables -A OUTPUT -j REJECT 
+	/sbin/iptables --policy OUTPUT DROP
 
-  # Autres protections réseau
-  echo 1 > /proc/sys/net/ipv4/tcp_syncookies
-  echo 0 > /proc/sys/net/ipv4/ip_forward 
-  echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts 
-  echo 1 > /proc/sys/net/ipv4/conf/all/log_martians 
-  echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
-  echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
-  echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
-  echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
- 
+# Autres protections réseau
+	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
+	echo 0 > /proc/sys/net/ipv4/ip_forward 
+	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts 
+	echo 1 > /proc/sys/net/ipv4/conf/all/log_martians 
+	echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
+	echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+	echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
 }
  
 fw_stop () {
-  /sbin/iptables -F
-  /sbin/iptables -t nat -F
-  /sbin/iptables -t mangle -F
-  /sbin/iptables -P INPUT ACCEPT
-  /sbin/iptables -P FORWARD DROP
-  /sbin/iptables -P OUTPUT ACCEPT
+	/sbin/iptables -F
+	/sbin/iptables -t nat -F
+	/sbin/iptables -t mangle -F
+	/sbin/iptables -P INPUT ACCEPT
+	/sbin/iptables -P FORWARD DROP
+	/sbin/iptables -P OUTPUT ACCEPT
 }
  
 fw_clear () {
-  /sbin/iptables -F
-  /sbin/iptables -t nat -F
-  /sbin/iptables -t mangle -F
-  /sbin/iptables -P INPUT ACCEPT
-  /sbin/iptables -P FORWARD ACCEPT
-  /sbin/iptables -P OUTPUT ACCEPT
+	/sbin/iptables -F
+	/sbin/iptables -t nat -F
+	/sbin/iptables -t mangle -F
+ 	/sbin/iptables -P INPUT ACCEPT
+	/sbin/iptables -P FORWARD ACCEPT
+	/sbin/iptables -P OUTPUT ACCEPT
 }
  
  
 case "$1" in
-  start|restart)
-    echo -n "Starting firewall.."
-    fw_stop 
-    fw_start
-    echo "done."
-    ;;
-  stop)
-    echo -n "Stopping firewall.."
-    fw_stop
-    echo "done."
-    ;;
-  clear)
-    echo -n "Clearing firewall rules.."
-    fw_clear
-    echo "done."
-    ;;
-  *)
-    echo "Usage: $0 {start|stop|restart|clear}"
-    exit 1
-    ;;
-  esac
+ 	start|restart)
+ 		echo -n "Starting firewall.."
+		fw_stop 
+		fw_start
+    		echo "done."
+	;;
+	stop)
+		echo -n "Stopping firewall.."
+		fw_stop
+		echo "done."
+	;;
+	clear)
+		echo -n "Clearing firewall rules.."
+		fw_clear
+		echo "done."
+	;;
+ 	*)
+		echo "Usage: $0 {start|stop|restart|clear}"
+		exit 1
+	;;
+	esac
 exit 0
