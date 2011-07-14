@@ -1,16 +1,15 @@
 server {
 	listen       80;
         server_name  DNS;
-        root         WEB/USERNAME/DNS;
+        root         WEB/USERNAME/public_html;
 
         # Static
         location / {
             index  index.html index.htm index.php;
 	}
 
-        # PHP scripts -> PHP-FPM server listening on 127.0.0.1:9000
         location ~ \.php$ {
-                 fastcgi_pass   127.0.0.1:9000;
+                 fastcgi_pass   unix:WEB/USERNAME/php.sock;
                  fastcgi_index  index.php;
                  include fastcgi_params;
                  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -33,4 +32,7 @@ server {
 		#set		$memcached_key $uri;
 		#memcached_pass 	127.0.0.1:11211;
 	}
+	
+	access_log WEB/USERNAME/logs/nginx_access.log;
+        error_log WEB/USERNAM/logs/nginx_error.log error;
   }

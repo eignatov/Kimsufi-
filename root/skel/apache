@@ -1,24 +1,23 @@
 <VirtualHost *:8080>
-        ServerName DNS
-        ServerAdmin     hostmaster@DNS
+	ServerName DNS
+	ServerAdmin     hostmaster@DNS
+	DocumentRoot WEB/USERNAME/public_html
 
-	DocumentRoot WEB/USERNAME/DNS/public_html
-        Options None
+# PHP-FPM
+	FastCgiExternalServer WEB/USERNAME/cgi-bin/php5.external -socket WEB/USERNAME/php.sock
+	Alias /cgi-bin/ WEB/USERNAME/cgi-bin/
 
-        # Fast CGI + FPM
-        FastCgiExternalServer WEB/USERNAME/DNS/cgi-bin/php5.external -socket WEB/USERNAME/DNS/.socks/firstweb.sock
-        
-	Alias /cgi-bin/ SKEL/USERNAME/DNS/cgi-bin/
+# Repertoire par defaut
+	<Directory WEB/USERNAME/public_html >
+		Options Indexes FollowSymLinks MultiViews
+		AllowOverride All
+		Order allow,deny
+		Allow from all
+	</Directory>
 
-        <Directory /home/www/firstweb/public_html>
-                Options SymLinksIfOwnerMatch
-                AllowOverride All
-                Order allow,deny
-                Allow from all
-        </Directory>
+# Logs
+	LogLevel warn
+	ErrorLog WEB/USERNAME/logs/apache_error.log
+	CustomLog WEB/USERNAME/logs/apache_access.log combined
 
-        # Log
-        ErrorLog SKEL/USERNAME/DNS/logs/error.log
-        LogLevel warn
-        CustomLog SKEL/USERNAME/DNS/logs/access.log combined
 </VirtualHost>

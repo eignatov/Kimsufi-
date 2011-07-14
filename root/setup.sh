@@ -89,6 +89,12 @@ then
 	log "I" "Installation de fail2ban"
 	aptitude -y install fail2ban
 	
+	log "I" "Installation rssh"
+	aptitude -y install rssh
+	chmod u+s /usr/lib/rssh/rssh_chroot_helper
+	
+	log "I" "Installation de divers trucs"
+	aptitude -y install strace
 
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then

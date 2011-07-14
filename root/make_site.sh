@@ -1,9 +1,8 @@
 #!/bin/bash
 
 set -x
-# Nom d'utilisateur "yo_user1, christ_user2, quentin_www1, quentin_www1, etc"
 USERNAME=$1
-MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=3`
+MOTDEPASSE=`mkpasswd.pl --length=20 --special=0 --digit=5`
 
 # Nom de domaine
 DNS=$2
@@ -48,22 +47,7 @@ log() (
 	echo $1": $(date +%D' '%R':'%S) "$2 >> /var/log/make_site.log
 	echo $1": $(date +%D' '%R':'%S) "$2 > /dev/stdout
 )
-#####################################
-# function make_pass
-#####################################
-# vérifie le mot de passe 
-make_pass() (
-	while true
-	do
-		TMP=`echo ${MOTDEPASSE} | grep '"'`
-		if [ -n "${TMP}"  ]
-		then
-			MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=3`
-		else 
-			break
-		fi
-	done
-)
+
 #####################################
 # function ajout_user()
 #####################################
@@ -77,10 +61,10 @@ ajout_user() (
 		exit 2
 	fi
 	
-	useradd	--base-dir=/var/www/$1		\
+	useradd	--base-dir=/var/www		\
 		--comment="$3"			\
 		--no-user-group			\
-		--shell=/usr/lib/sftp-server	\
+		--shell=/usr/bin/rssh	\
 		--password=$2			\
 		$1
 	
@@ -101,12 +85,15 @@ ajout_user() (
 # @param2 Site web
 # @param3 racine des sites
 ajout_rep() (
-	mkdir -p -v $3/$1/$2/public_html
-	mkdir -p -v $3/$1/$2/logs
-	mkdir -p -v $3/$1/$2/tmp
-	mkdir -p -v $3/$1/$2/cgi-bin
+	mkdir -p -v $3/$1/public_html
+	mkdir -p -v $3/$1/logs
+	mkdir -p -v $3/$1/tmp
+	mkdir -p -v $3/$1/cgi-bin
 
 # FIX Ajout les fichiers de logs
+	touch $3/$1/logs/php-slow.log
+	touch $3/$1/logs/apache_error.log
+	touch $3/$1/logs/apache_access.log
 		
 	chown	--verbose	\
 		--preserve-root	\
@@ -114,6 +101,20 @@ ajout_rep() (
 		$1:www-data $3/$1
 )
 
+#####################################
+# function ajout_chroot()
+#####################################
+# Configure un accès sftp chrooté 
+# @param1 user
+ajout_chroot() (
+	/root/copie_binaire.sh /usr/bin/sftp $WEB/$1
+	cp /lib/libnss_files.so.2 $WEB/$1/lib 
+	mkdir -p $WEB/$1/usr/lib/openssh
+	cp  /usr/lib/openssh/sftp-server $WEB/$1/usr/lib/openssh/
+	mkdir -p $WEB/$1/dev
+	mknod $WEB/$1/dev/null c 1 3
+	chmod 666 $WEB/$1/dev/null
+)
 
 #####################################
 # function copie_skel()
@@ -128,16 +129,17 @@ ajout_rep() (
 copie_skel() (
 	if [[ "$5" = "nginx" ]];then
 		# NGINX
-		sed -e "s%DNS%$DNS%;" -e "s%WEB%$WEB%;"-e "s%USERNAME%$USERNAME%g" $1/nginx > /etc/nginx/sites-enabled/$4_$5
+		sed -e "s%DNS%$DNS%g;" -e "s%WEB%$WEB%g;" -e "s%USERNAME%$USERNAME%g" $1/nginx > /etc/nginx/sites-enabled/$3_$4
 	else 
 		# NGINX -> APACHE
-		sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/g" $1/nginx_apache > /etc/nginx/sites-enabled/apache_$4_$5
-		sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/g" $1/apache > /etc/apache2/sites-available/$4_$5
-		/usr/sbin/a2ensite $4_$5
+		sed -e "s/DNS/$DNS/g;" -e "s%WEB%$WEB%g;" -e "s/USERNAME/$USERNAME/g" $1/nginx_apache > /etc/nginx/sites-enabled/apache_$3_$4
+		sed -e "s/DNS/$DNS/g;" -e "s%WEB%$WEB%g;" -e "s/USERNAME/$USERNAME/g" $1/apache > /etc/apache2/sites-available/$3_$4
+		/usr/sbin/a2ensite $3_$4
+		echo "127.0.0.1 $4" >> /etc/hosts
 	fi
 	
 	# Pools PHP
-	sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/" $1/php > /etc/php5/fpm/pool.d/$4_$5
+	sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/" $1/php > /etc/php5/fpm/pool.d/$3_$4
 )
 
 
@@ -146,14 +148,16 @@ then
 	aide
 	exit 0
 fi
-make_pass
+
 ajout_user ${USERNAME} ${MOTDEPASSE} ${COMMENT} || exit 2
 ajout_rep ${USERNAME} ${DNS} ${WEB}
 copie_skel ${SKEL} ${WEB} ${USERNAME} ${DNS} ${TYPE}
 
 /etc/init.d/apache2 reload
-echo "Mot de passe : ${MOTDEPASSE}"
+/etc/init.d/nginx reload
+/etc/init.d/php5-fpm restart
 
-#touch /etc/php5/fpm/pool.d/$1.conf
-
-
+echo "HOST :"
+echo "SITE : ${DNS}"
+echo "USER : ${USERNAME}"
+echo "PASS : ${MOTDEPASSE}"

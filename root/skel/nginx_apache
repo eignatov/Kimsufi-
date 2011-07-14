@@ -1,37 +1,26 @@
 server {
 	listen       80;
         server_name  DNS;
-        root         WEB/USERNAME/DNS/public_html/;
 
-        # Static
+# Envoie vers apache
 	location / {
-    		proxy_pass http://127.0.0.1:8080/;
-    		access_log off;
+    		proxy_pass http://DNS:8080/;
+		proxy_set_header  X-Real-IP  $remote_addr;
+    		access_log on;
   	}
 
-        # PHP scripts -> PHP-FPM server listening on 127.0.0.1:9000
-        location ~ \.php$ {
-                 fastcgi_pass   127.0.0.1:9000;
-                 fastcgi_index  index.php;
-                 include fastcgi_params;
-                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        }
 
-        # Security
-        location ~ /\.ht {
-            deny  all;
-        }
-
-	# Stuffs
-	location = /favicon.ico {
-		access_log	 off;
-		return	 204;
-	}
-
+# Cache des images, etc
 	location ~* ^.+\.(jpg|jpeg|gif|css|png|js|xml)$ {
+        	root         WEB/USERNAME/public_html/;
 		expires 	30d;
 		#access_log	off;
 		#set		$memcached_key $uri;
 		#memcached_pass 	127.0.0.1:11211;
 	}
+
+# Logs
+	access_log WEB/USERNAME/logs/nginx_access.log;
+        error_log WEB/USERNAME/logs/nginx_error.log error;
+
   }
