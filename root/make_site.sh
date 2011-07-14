@@ -6,6 +6,9 @@ USERNAME=$1
 # Mot de passe aléatoire
 MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=5`
 
+# Mot de passe aléatoire Mysql
+MOTDEPASSE_DB=`mkpasswd.pl --length=20 --special=0 --digit=5`
+
 # Nom de domaine
 DNS=$2
 
@@ -108,20 +111,6 @@ ajout_rep() (
 	chown root:root $3/$1
 )
 
-#####################################
-# function ajout_chroot()
-#####################################
-# Configure un accès sftp chrooté 
-# @param1 user
-ajout_chroot() (
-	/root/copie_binaire.sh /usr/bin/sftp $WEB/$1
-	cp /lib/libnss_files.so.2 $WEB/$1/lib 
-	mkdir -p $WEB/$1/usr/lib/openssh
-	cp  /usr/lib/openssh/sftp-server $WEB/$1/usr/lib/openssh/
-	mkdir -p $WEB/$1/dev
-	mknod $WEB/$1/dev/null c 1 3
-	chmod 666 $WEB/$1/dev/null
-)
 
 #####################################
 # function copie_skel()
@@ -149,6 +138,21 @@ copie_skel() (
 	sed -e "s/DNS/$DNS/;" -e "s%WEB%$WEB%;" -e "s/USERNAME/$USERNAME/" $1/php > /etc/php5/fpm/pool.d/$3_$4
 )
 
+#####################################
+# function ajout_db()
+#####################################
+# Creer une BD mysqll
+# @param1: user
+# @param2: password 
+ajout_db() (
+	MYSQL=`which mysql`
+ 
+	Q1="CREATE DATABASE IF NOT EXISTS db_$1;"
+	Q2="GRANT ALL ON *.* TO '$1'@'localhost' IDENTIFIED BY '$2';"
+	Q3="FLUSH PRIVILEGES;"
+	SQL="${Q1}${Q2}${Q3}"
+	$MYSQL -uroot -p -e "$SQL"
+)
 
 if [ $# -ne 5 ]
 then 
@@ -164,7 +168,21 @@ copie_skel ${SKEL} ${WEB} ${USERNAME} ${DNS} ${TYPE}
 /etc/init.d/nginx reload
 /etc/init.d/php5-fpm restart
 
+if [[ "$4" = "true" ]];then
+	echo "Création d'une base de donnée"
+	echo "MDP mysql root :"
+	ajout_db ${USERNAME} ${MOTDEPASSE_DB}
+fi
+
+
 echo "HOST :"
 echo "SITE : ${DNS}"
 echo "USER : ${USERNAME}"
 echo "PASS : ${MOTDEPASSE}"
+
+if [[ "$4" = "true" ]];then
+	echo "-----db-----"
+	echo "DB NAME : db_${USERNAME}"
+	echo "DB USER : ${USERNAME}"
+	echo "DB PASS : ${MOTDEPASSE_DB}"
+fi
