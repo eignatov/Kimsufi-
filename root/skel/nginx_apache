@@ -6,6 +6,7 @@ server {
 	location / {
     		proxy_pass http://DNS:8080/;
 		proxy_set_header  X-Real-IP  $remote_addr;
+		proxy_hide_header X-Powered-By;
     		access_log on;
   	}
 

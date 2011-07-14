@@ -1,4 +1,4 @@
-<VirtualHost *:8080>
+<VirtualHost 127.0.0.1:8080>
 	ServerName DNS
 	ServerAdmin     hostmaster@DNS
 	DocumentRoot WEB/USERNAME/public_html
