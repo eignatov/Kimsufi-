@@ -1,8 +1,10 @@
 #!/bin/bash
 
-set -x
+# Utilisateur
 USERNAME=$1
-MOTDEPASSE=`mkpasswd.pl --length=20 --special=0 --digit=5`
+
+# Mot de passe aléatoire
+MOTDEPASSE=`mkpasswd.pl --length=20 --special=5 --digit=5`
 
 # Nom de domaine
 DNS=$2
@@ -13,8 +15,8 @@ TYPE=$3
 # Mysql true/false
 MYSQL=$4
 
-# Commentaire
-COMMENT=$3
+# Commentaire < Mail
+COMMENT=$5
 
 # Fichiers de conf par default
 SKEL=/root/skel
@@ -61,18 +63,22 @@ ajout_user() (
 		exit 2
 	fi
 	
-	useradd	--base-dir=/var/www		\
+	useradd	--home=/			\
 		--comment="$3"			\
-		--no-user-group			\
-		--shell=/usr/bin/rssh	\
+		--gid="sftponly"		\
+		--shell=/usr/lib/sftp-server	\
 		--password=$2			\
 		$1
-	
+
+	echo -e "${2}\n${2}" | passwd $1
+
 	if [[ $? -ne 0 ]];then
 		log "E" "Echec dans la création de l'utilisateur"
 		exit 2
 	fi
 	
+	adduser $1 sftponly
+
 	log "I" "Création de l'utilisateur ${USERNAME}"
 	exit 0
 )
@@ -99,6 +105,7 @@ ajout_rep() (
 		--preserve-root	\
 		--recursive	\
 		$1:www-data $3/$1
+	chown root:root $3/$1
 )
 
 #####################################

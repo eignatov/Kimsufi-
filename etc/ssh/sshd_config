@@ -19,7 +19,8 @@ ServerKeyBits 768
 
 # Logging
 SyslogFacility AUTH
-LogLevel INFO
+#LogLevel INFO
+LogLevel DEBUG
 
 # Authentication:
 LoginGraceTime 120
@@ -59,9 +60,9 @@ ChallengeResponseAuthentication no
 #GSSAPIAuthentication no
 #GSSAPICleanupCredentials yes
 
-X11Forwarding yes
+X11Forwarding no
 X11DisplayOffset 10
-PrintMotd no
+PrintMotd yes
 PrintLastLog yes
 TCPKeepAlive yes
 #UseLogin no
@@ -71,8 +72,8 @@ TCPKeepAlive yes
 
 # Allow client to pass locale environment variables
 AcceptEnv LANG LC_*
-
-Subsystem sftp /usr/lib/openssh/sftp-server
+# AllowUsers root testa testb
+Subsystem sftp /usr/lib/openssh/sftp-server -f LOCAL7 -l INFO
 
 # Set this to 'yes' to enable PAM authentication, account processing,
 # and session processing. If this is enabled, PAM authentication will
@@ -85,4 +86,10 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 # and ChallengeResponseAuthentication to 'no'.
 UsePAM yes
 
-DebianBanner no
+DebianBanner yes
+
+Match group sftponly
+         ChrootDirectory /var/www/%u
+         X11Forwarding no
+         AllowTcpForwarding no
+         ForceCommand internal-sftp

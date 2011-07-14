@@ -82,6 +82,7 @@ then
 	aptitude -y install syslog-ng
 	mkdir /var/lib/syslog-ng
 	mkdir /var/log/fw
+
 	touch /var/log/fw/in.log
 	touch /var/log/fw/out.log
 
@@ -89,12 +90,11 @@ then
 	log "I" "Installation de fail2ban"
 	aptitude -y install fail2ban
 	
-	log "I" "Installation rssh"
-	aptitude -y install rssh
-	chmod u+s /usr/lib/rssh/rssh_chroot_helper
-	
 	log "I" "Installation de divers trucs"
 	aptitude -y install strace
+	
+	log "I" "Création d'un groupe pour les utilisateurs web"
+	groupadd sftponly
 
 elif [[ -n `grep "step_kernel_0" /var/log/setup_step` ]];
 then
