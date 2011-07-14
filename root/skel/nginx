@@ -1,29 +1,24 @@
 server {
-	listen       80;
-        server_name  DNS;
-        root         WEB/USERNAME/public_html;
+	listen		80;
+        server_name	DNS;
+        root		WEB/USERNAME/public_html;
 
         # Static
         location / {
-            index  index.html index.htm index.php;
+		index	index.html index.htm index.php;
 	}
 
         location ~ \.php$ {
-                 fastcgi_pass   unix:WEB/USERNAME/php.sock;
-                 fastcgi_index  index.php;
-                 include fastcgi_params;
-                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-		
-		# Cacher la version de PHP utilisé
-		fastcgi_hide_header X-Powered-By;
+		fastcgi_pass   unix:WEB/USERNAME/php.sock;
+		include /etc/nginx/fastcgi.conf;
         }
 
-        # Security
-        location ~ /\.ht {
-            deny  all;
-        }
+# Security
+	location ~ /\.ht {
+		deny  all;
+	}
 
-	# Stuffs
+# Stuffs
 	location = /favicon.ico {
 		access_log	 off;
 		return	 204;
@@ -37,5 +32,5 @@ server {
 	}
 	
 	access_log WEB/USERNAME/logs/nginx_access.log;
-        error_log WEB/USERNAM/logs/nginx_error.log error;
-  }
+	error_log WEB/USERNAM/logs/nginx_error.log error;
+}
