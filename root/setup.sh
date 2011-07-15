@@ -22,7 +22,7 @@ then
 	log "I" "L'installation du nouveau noyau a déjà été réalisé : $(uname -a)"
 
 	log "I" "Installation des packages de base"
-	aptitude -y install ntpdate  lsof libstring-mkpasswd-perl ccze
+	aptitude -y install ntpdate  lsof libstring-mkpasswd-perl ccze htop zsh screen irssi curl p7zip-full unzip zip sysv-rc-conf imagemagick
 	
 	log "I" "Installation du client ntp"
 	aptitude -y install ntpdate
