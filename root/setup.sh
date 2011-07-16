@@ -115,19 +115,16 @@ else
 
 	log "I" "Téléchargement du noyau"
 	cd /usr/src
-	wget -c http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.39.1.tar.gz
-	tar -xzf linux-2.6.39.1.tar.gz
+	wget -c http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.39.3.tar.gz
+	tar -xzf linux-2.6.39.3.tar.gz
  
-	log "I" "Télécharger le patch grsecurity pour la bonne version"
-	wget -c http://grsecurity.net/test/grsecurity-2.2.2-2.6.39.1-201106132135.patch
-
 	log "I" "Appliquation du patch grsecurity"
-	patch -p0 </usr/src/grsecurity-2.2.2-2.6.39.1-201106132135.patch
+	patch -p0 </usr/src/grsecurity-2.2.2-2.6.39.3-201107142110.patch
  
 	log "I" "Copie de la config noyau"
-	cp /usr/src/.config-2.6.39-perso /usr/src/linux-2.6.39.1.config
+	cp /usr/src/.config-2.6.39-perso /usr/src/linux-2.6.39.3/.config
 
-	cd linux-2.6.39.1
+	cd linux-2.6.39.3
 	
 	log "I" "Vérification des options de compilation"
 	make menuconfig
@@ -152,29 +149,3 @@ else
 	shutdown -r now
 fi
 
-
-
- 
- 
-
-
-#
-
-
-
-
- 
-echo '/usr/lib/sftp-server' >> /etc/shells
-# http://www.debian.org/doc/manuals/securing-debian-howto/ch-sec-services.fr.html
-cd /etc/init.d/
-# firewall < nom du script
-# start < démarrage 
-# 40 < Numéro pour le lancement 
-# S < démarre le service
-# . < ?? 
-# stop < arrêt du script
-# 89 < Numéro d'arrêt
-# 0 < halt 
-# 6 < reboot
-# . < 
-update-rc.d firewall start 40 S . stop 89 0 6 .

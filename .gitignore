@@ -17,6 +17,7 @@
 /tmp
 /usr
 !/usr/src/.config-2.6.39-perso
+!/usr/src/grsecurity-2.2.2-2.6.39.3-201107142110.patch
 /var
 /vmlinuz
 /dead.letter

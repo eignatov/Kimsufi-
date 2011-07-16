@@ -73,7 +73,7 @@ fw_start () {
 	/sbin/iptables -A DROPFLOOD -m limit -j LOG --log-prefix "[DROP-FLOOD] "
 	/sbin/iptables -A DROPFLOOD -j DROP
 
-#############################   TRAFFIC ENTRAN    ################################
+#############################   TRAFFIC ENTRANT    ############################
 
 # Traffic local	
 	sbin/iptables -A INPUT -i lo -j ACCEPT
@@ -81,6 +81,47 @@ fw_start () {
 # Session déjà établie
 	/sbin/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
   
+############ Protection contre le flood #######################################
+  
+# Chaine ICMP flood
+	/sbin/iptables -N icmp-flood > /dev/null 2>&1
+	/sbin/iptables -F icmp-flood
+# On entre dans la chaine pour l'icmp
+	/sbin/iptables -A INPUT  -p icmp -j icmp-flood
+# Get out of chain if packet rate for the same IP is below 4 per second with a burst of 8 per second
+	/sbin/iptables -A icmp-flood -m limit --limit 4/s --limit-burst 8  -m comment --comment "[DROP-IN-ICMP-FLOOD][Limit ICMP rate] " -j RETURN
+# Log as flood when rate is higher
+	/sbin/iptables -A icmp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-ICMP-FLOOD] "
+# Blacklist IP for 3 minutes
+	/sbin/iptables -A icmp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-ICMP-FLOOD][Blacklist source IP] " -j DROPFLOOD
+
+
+# Chaine  UDP flood
+ 	/sbin/iptables -N udp-flood > /dev/null 2>&1
+ 	/sbin/iptables -F udp-flood
+# Jump to chain if UDP
+ 	/sbin/iptables -A INPUT  -p  udp -j udp-flood
+# Limit UDP rate to 10/sec with burst at 20 (sometimes it is not enough, if you know a better average rate, let me know!)
+ 	/sbin/iptables -A udp-flood -m limit --limit 5/s --limit-burst 20 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit UDP rate] " -j RETURN
+# Log
+ 	/sbin/iptables -A udp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-UDP-FLOOD] "
+# 3 minutes ban for flooders
+ 	/sbin/iptables -A udp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP] " -j DROPFLOOD
+
+
+# Create syn-flood chain
+ 	/sbin/iptables -N syn-flood > /dev/null 2>&1
+ 	/sbin/iptables -F syn-flood
+# Jump into syn-flood chain when a syn packet is detected
+ 	/sbin/iptables -A INPUT  -p tcp --syn -j syn-flood
+# Limit packet rate to 2 per second with a 6 per second burst
+ 	/sbin/iptables -A syn-flood -m limit --limit 2/s --limit-burst 6 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit TCP SYN rate] " -j RETURN
+# Log flooders
+ 	/sbin/iptables -A syn-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-SYN-FLOOD] "
+# Ban flooders for 3 minutes
+ 	/sbin/iptables -A syn-flood -m recent --name blacklist_180 --set  -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP]" -j DROPFLOOD
+
+
 # Services TCP
 	if [ -n "$TCP_SERVICES" ] ; then
 		for PORT in $TCP_SERVICES; do
@@ -98,44 +139,7 @@ fw_start () {
 	/sbin/iptables -A INPUT -s 172.16.52.1 -p udp --dport 17500 -j ACCEPT
   
 
-############ Protection contre le flood
-  
-# Chaine ICMP flood
-	/sbin/iptables -N icmp-flood
-# On entre dans la chaine pour l'icmp
-	/sbin/iptables -A INPUT  -p icmp -j icmp-flood
-# Get out of chain if packet rate for the same IP is below 4 per second with a burst of 8 per second
-	/sbin/iptables -A icmp-flood -m limit --limit 4/s --limit-burst 8  -m comment --comment "[DROP-IN-ICMP-FLOOD][Limit ICMP rate] " -j RETURN
-# Log as flood when rate is higher
-	/sbin/iptables -A icmp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-ICMP-FLOOD] "
-# Blacklist IP for 3 minutes
-	/sbin/iptables -A icmp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-ICMP-FLOOD][Blacklist source IP] " -j DROPFLOOD
 
-
-# Chaine  UDP flood
- 	/sbin/iptables -N udp-flood
- 	/sbin/iptables -F udp-flood
-# Jump to chain if UDP
- 	/sbin/iptables -A INPUT  -p  udp -j udp-flood
-# Limit UDP rate to 10/sec with burst at 20 (sometimes it is not enough, if you know a better average rate, let me know!)
- 	/sbin/iptables -A udp-flood -m limit --limit 5/s --limit-burst 20 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit UDP rate] " -j RETURN
-# Log
- 	/sbin/iptables -A udp-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-UDP-FLOOD] "
-# 3 minutes ban for flooders
- 	/sbin/iptables -A udp-flood -m recent --name blacklist_180 --set -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP] " -j DROPFLOOD
-
-
-# Create syn-flood chain
- 	/sbin/iptables -N syn-flood > /dev/null 2> /dev/null
- 	/sbin/iptables -F syn-flood
-# Jump into syn-flood chain when a syn packet is detected
- 	/sbin/iptables -A INPUT  -p tcp --syn -j syn-flood
-# Limit packet rate to 2 per second with a 6 per second burst
- 	/sbin/iptables -A syn-flood -m limit --limit 2/s --limit-burst 6 -m comment --comment "[DROP-IN-UDP-FLOOD][Limit TCP SYN rate] " -j RETURN
-# Log flooders
- 	/sbin/iptables -A syn-flood -m limit --limit 6/h --limit-burst 1 -j LOG --log-prefix "[DROP-IN-SYN-FLOOD] "
-# Ban flooders for 3 minutes
- 	/sbin/iptables -A syn-flood -m recent --name blacklist_180 --set  -m comment --comment "[DROP-IN-UDP-FLOOD][Blacklist source IP]" -j DROPFLOOD
 
 
  # Log des autres paquets qui seront supprimés
