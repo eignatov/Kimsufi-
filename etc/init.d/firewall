@@ -69,7 +69,13 @@ fw_start () {
   
 # Session déjà établie
 	/sbin/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+# OVH
 
+	/sbin/iptables -A INPUT -i eth0 -p icmp --source proxy.ovh.net -j ACCEPT
+	/sbin/iptables -A INPUT -i eth0 -p icmp --source proxy.p19.ovh.net -j ACCEPT
+	/sbin/iptables -A INPUT -i eth0 -p icmp --source proxy.rbx.ovh.net -j ACCEPT
+	/sbin/iptables -A INPUT -i eth0 -p icmp --source proxy.rbx2.ovh.net -j ACCEPT
+	/sbin/iptables -A INPUT -i eth0 -p icmp --source ping.ovh.net -j ACCEPT
 
 ###################### Protection contre les scans #############################
 	/sbin/iptables -N SCANS
@@ -168,7 +174,10 @@ fw_start () {
 
 # ICMP est permis
 	/sbin/iptables -A OUTPUT -p icmp -j ACCEPT
-
+# traceroute
+	/sbin/iptables -A OUTPUT -p udp --dport 33200:33500 -m state --state NEW -j ACCEPT
+# OVH RTM
+	/sbin/iptables -A OUTPUT -p udp --dport 6100:6200 -j ACCEPT
 # Ainsi que pour tous les services que nous avons définis
 	if [ -n "$REMOTE_TCP_SERVICES" ] ; then
 		for PORT in $REMOTE_TCP_SERVICES; do
@@ -241,4 +250,3 @@ case "$1" in
 	;;
 	esac
 exit 0
-
